@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Projekt-Vokabeltrainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#26332F;
+    --ink-2:#1D2723;
+    --paper:#ECE6D6;
+    --paper-2:#DFD8C4;
+    --pencil:#4A564F;
+    --accent:#D9722C;
+    --accent-2:#B65B49;
+    --good:#7E9B76;
+    --text-dark:#23281F;
+    --text-light:#F3EFE3;
+    --shadow: 0 20px 40px -18px rgba(0,0,0,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% -10%, #33433C 0%, transparent 55%),
+      var(--ink);
+    background-attachment:fixed;
+    font-family:'Inter', sans-serif;
+    color:var(--text-light);
+    display:flex;
+    justify-content:center;
+    padding:24px 16px 40px;
+  }
+  .app{
+    width:100%;
+    max-width:440px;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+  }
+  header{
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:4px 2px 0;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--good);
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    line-height:1.1;
+    letter-spacing:-0.01em;
+  }
+  .add-btn{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    border:1px solid rgba(243,239,227,0.25);
+    background:rgba(255,255,255,0.06);
+    color:var(--text-light);
+    font-size:22px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+    flex-shrink:0;
+  }
+  .add-btn:hover{ background:rgba(255,255,255,0.12); }
+  .add-btn:active{ transform:scale(0.94); }
+
+  /* language switch */
+  .switcher{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(243,239,227,0.15);
+    border-radius:999px;
+    padding:6px 8px;
+  }
+  .switcher button{
+    flex:1;
+    border:none;
+    background:transparent;
+    color:rgba(243,239,227,0.55);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    letter-spacing:0.04em;
+    padding:9px 6px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+  .switcher button.active{
+    background:var(--accent);
+    color:#1D2723;
+    font-weight:600;
+  }
+  .switcher .arrow{
+    color:rgba(243,239,227,0.35);
+    font-size:14px;
+  }
+
+  /* card stage */
+  .stage{
+    position:relative;
+    height:330px;
+  }
+  .tab{
+    position:absolute;
+    top:-13px;
+    left:24px;
+    background:var(--accent);
+    color:#1D2723;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    font-weight:600;
+    padding:5px 12px 6px;
+    border-radius:6px 6px 0 0;
+    letter-spacing:0.03em;
+    z-index:3;
+  }
+  .card{
+    position:absolute;
+    inset:0;
+    background:var(--paper);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    padding:26px 24px 22px;
+    display:flex;
+    flex-direction:column;
+    cursor:pointer;
+    -webkit-user-select:none;
+    user-select:none;
+    transition:transform .25s ease, opacity .25s ease;
+  }
+  .card::before{
+    content:'';
+    position:absolute;
+    left:24px; right:24px;
+    top:54px;
+    border-top:1.5px dashed rgba(35,40,31,0.18);
+  }
+  .card-lang{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent-2);
+    font-weight:600;
+    margin-bottom:16px;
+  }
+  .card-text{
+    font-family:'Fraunces', serif;
+    font-size:22px;
+    line-height:1.35;
+    color:var(--text-dark);
+    font-weight:500;
+    flex:1;
+    display:flex;
+    align-items:center;
+  }
+  .card-hint{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--pencil);
+    text-align:center;
+    opacity:0.75;
+  }
+  .card.revealed .card-text{ color:var(--ink-2); }
+  .card.revealed{ background: var(--paper-2); }
+
+  .stage .empty, .stage .loading{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center;
+    background:var(--paper);
+    border-radius:16px;
+    color:var(--pencil);
+    font-family:'Inter';
+    font-size:14px;
+    padding:24px;
+    box-shadow:var(--shadow);
+  }
+
+  /* controls */
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .nav-btn{
+    width:52px; height:52px;
+    border-radius:50%;
+    border:1px solid rgba(243,239,227,0.2);
+    background:rgba(255,255,255,0.05);
+    color:var(--text-light);
+    font-size:20px;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+  }
+  .nav-btn:active{ transform:scale(0.92); }
+  .nav-btn:hover{ background:rgba(255,255,255,0.12); }
+  .progress{
+    flex:1;
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:rgba(243,239,227,0.7);
+  }
+  .shuffle-btn{
+    width:100%;
+    padding:13px;
+    border-radius:12px;
+    border:1px dashed rgba(243,239,227,0.28);
+    background:transparent;
+    color:rgba(243,239,227,0.75);
+    font-family:'Inter';
+    font-size:13.5px;
+    font-weight:500;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .shuffle-btn:hover{ background:rgba(255,255,255,0.06); }
+
+  .status{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    text-align:center;
+    color:var(--accent-2);
+    min-height:14px;
+  }
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(15,20,17,0.72);
+    backdrop-filter:blur(2px);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    width:100%;
+    max-width:440px;
+    background:var(--paper);
+    border-radius:20px 20px 0 0;
+    padding:22px 22px 28px;
+    transform:translateY(16px);
+    transition:transform .22s ease;
+    box-shadow:0 -20px 50px rgba(0,0,0,0.5);
+  }
+  .overlay.open .sheet{ transform:translateY(0); }
+  .sheet h2{
+    font-family:'Fraunces', serif;
+    color:var(--text-dark);
+    font-size:20px;
+    margin:0 0 4px;
+  }
+  .sheet p.sub{
+    font-family:'Inter'; font-size:13px; color:var(--pencil); margin:0 0 18px;
+  }
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--accent-2);
+    margin-bottom:6px;
+    font-weight:600;
+  }
+  .field textarea{
+    width:100%;
+    border:1.5px solid rgba(35,40,31,0.18);
+    border-radius:10px;
+    background:#fff;
+    padding:11px 12px;
+    font-family:'Inter';
+    font-size:14.5px;
+    color:var(--text-dark);
+    resize:vertical;
+    min-height:52px;
+  }
+  .field textarea:focus{
+    outline:none;
+    border-color:var(--accent);
+  }
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:6px;
+  }
+  .sheet-actions button{
+    flex:1;
+    padding:13px;
+    border-radius:10px;
+    font-family:'Inter';
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-cancel{
+    background:transparent;
+    color:var(--pencil);
+    border:1.5px solid rgba(35,40,31,0.18) !important;
+  }
+  .btn-save{
+    background:var(--accent);
+    color:#1D2723;
+  }
+  .btn-save:disabled{ opacity:0.5; }
+  .sheet-status{
+    font-family:'Inter'; font-size:12.5px; margin-top:10px; text-align:center; min-height:16px;
+  }
+  .sheet-status.error{ color:var(--accent-2); }
+  .sheet-status.ok{ color:#3f6b3a; }
+
+  .config-warning{
+    background:rgba(217,114,44,0.14);
+    border:1px solid rgba(217,114,44,0.4);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:12.5px;
+    line-height:1.5;
+    color:#F0C9A6;
+  }
+  .config-warning code{
+    background:rgba(0,0,0,0.25);
+    padding:1px 5px;
+    border-radius:4px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <p class="eyebrow">Projektmanagement · 100 Sätze</p>
+      <h1>Vokabeltrainer</h1>
+    </div>
+    <button class="add-btn" id="openAdd" aria-label="Satz hinzufügen">+</button>
+  </header>
+
+  <div id="configWarning" class="config-warning" style="display:none">
+    Backend noch nicht verbunden: Trage deine Apps-Script-URL in <code>CONFIG.APPS_SCRIPT_URL</code>
+    am Ende der Datei ein (siehe Anleitung im Chat).
+  </div>
+
+  <div class="switcher">
+    <button id="btnEnDe" class="active">EN → DE</button>
+    <span class="arrow">⇄</span>
+    <button id="btnDeEn">DE → EN</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="loading" id="loadingState">Sätze werden geladen …</div>
+  </div>
+
+  <div class="controls">
+    <button class="nav-btn" id="prevBtn" aria-label="Zurück">‹</button>
+    <div class="progress" id="progress">– / –</div>
+    <button class="nav-btn" id="nextBtn" aria-label="Weiter">›</button>
+  </div>
+
+  <button class="shuffle-btn" id="shuffleBtn">Karten mischen</button>
+  <div class="status" id="globalStatus"></div>
+</div>
+
+<!-- Add sentence sheet -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h2>Neuen Satz hinzufügen</h2>
+    <p class="sub">Wird direkt in dein Google Sheet geschrieben.</p>
+    <div class="field">
+      <label>Englisch</label>
+      <textarea id="inputEn" placeholder="e.g. We need to finalize the budget by Friday."></textarea>
+    </div>
+    <div class="field">
+      <label>Deutsch</label>
+      <textarea id="inputDe" placeholder="z. B. Wir müssen das Budget bis Freitag fertigstellen."></textarea>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" id="cancelAdd">Abbrechen</button>
+      <button class="btn-save" id="saveAdd">Speichern</button>
+    </div>
+    <div class="sheet-status" id="sheetStatus"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   KONFIGURATION – HIER DEINE APPS-SCRIPT-URL EINTRAGEN
+   ============================================================ */
+const CONFIG = {
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzxgQWVUvSuW_n9AJmzcFJocTT2aPxYPceAkARI-wzsMPS4M0xQNluaqgjXrM6Krokh/exec"
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let sentences = [];   // {ID, English, German}
+let order = [];        // shuffled index order
+let pos = 0;
+let direction = 'en2de'; // or 'de2en'
+let revealed = false;
+
+const stage = document.getElementById('stage');
+const progressEl = document.getElementById('progress');
+const globalStatus = document.getElementById('globalStatus');
+const configWarning = document.getElementById('configWarning');
+
+function isConfigured(){
+  return CONFIG.APPS_SCRIPT_URL && CONFIG.APPS_SCRIPT_URL.startsWith('http');
+}
+
+/* ============================================================
+   LOAD DATA
+   ============================================================ */
+async function loadSentences(){
+  if(!isConfigured()){
+    configWarning.style.display = 'block';
+    stage.innerHTML = '<div class="empty">Keine Verbindung zum Sheet.<br>Trage zuerst deine Apps-Script-URL ein.</div>';
+    progressEl.textContent = '– / –';
+    return;
+  }
+  try{
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL);
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    sentences = data.filter(s => s.English && s.German);
+    order = sentences.map((_, i) => i);
+    pos = 0;
+    revealed = false;
+    renderCard();
+  }catch(err){
+    stage.innerHTML = '<div class="empty">Sätze konnten nicht geladen werden.<br>Prüfe die Apps-Script-URL und ob die Web-App auf „Jeder" freigegeben ist.</div>';
+    globalStatus.textContent = String(err.message || err);
+  }
+}
+
+/* ============================================================
+   RENDER CARD
+   ============================================================ */
+function renderCard(){
+  if(sentences.length === 0){
+    stage.innerHTML = '<div class="empty">Noch keine Sätze vorhanden.<br>Füge oben rechts (+) den ersten hinzu.</div>';
+    progressEl.textContent = '0 / 0';
+    return;
+  }
+
+  const idx = order[pos];
+  const item = sentences[idx];
+
+  const front = direction === 'en2de' ? item.English : item.German;
+  const back  = direction === 'en2de' ? item.German  : item.English;
+  const frontLabel = direction === 'en2de' ? 'Englisch' : 'Deutsch';
+  const backLabel  = direction === 'en2de' ? 'Deutsch'  : 'Englisch';
+
+  const text = revealed ? back : front;
+  const label = revealed ? backLabel : frontLabel;
+  const hint = revealed ? 'Tippen für Frage' : 'Tippen für Übersetzung';
+
+  stage.innerHTML = `
+    <div class="tab">#${String(item.ID).padStart(2,'0')}</div>
+    <div class="card ${revealed ? 'revealed' : ''}" id="flashcard">
+      <div class="card-lang">${label}</div>
+      <div class="card-text">${escapeHtml(text)}</div>
+      <div class="card-hint">${hint}</div>
+    </div>
+  `;
+  document.getElementById('flashcard').addEventListener('click', () => {
+    revealed = !revealed;
+    renderCard();
+  });
+
+  progressEl.textContent = (pos + 1) + ' / ' + order.length;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if(order.length === 0) return;
+  pos = (pos + 1) % order.length;
+  revealed = false;
+  renderCard();
+});
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if(order.length === 0) return;
+  pos = (pos - 1 + order.length) % order.length;
+  revealed = false;
+  renderCard();
+});
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  for(let i = order.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  pos = 0;
+  revealed = false;
+  renderCard();
+});
+
+/* ============================================================
+   LANGUAGE SWITCH
+   ============================================================ */
+const btnEnDe = document.getElementById('btnEnDe');
+const btnDeEn = document.getElementById('btnDeEn');
+function setDirection(dir){
+  direction = dir;
+  revealed = false;
+  btnEnDe.classList.toggle('active', dir === 'en2de');
+  btnDeEn.classList.toggle('active', dir === 'de2en');
+  renderCard();
+}
+btnEnDe.addEventListener('click', () => setDirection('en2de'));
+btnDeEn.addEventListener('click', () => setDirection('de2en'));
+
+/* ============================================================
+   ADD SENTENCE
+   ============================================================ */
+const overlay = document.getElementById('overlay');
+const inputEn = document.getElementById('inputEn');
+const inputDe = document.getElementById('inputDe');
+const sheetStatus = document.getElementById('sheetStatus');
+const saveAdd = document.getElementById('saveAdd');
+
+document.getElementById('openAdd').addEventListener('click', () => {
+  inputEn.value = ''; inputDe.value = '';
+  sheetStatus.textContent = '';
+  sheetStatus.className = 'sheet-status';
+  overlay.classList.add('open');
+});
+document.getElementById('cancelAdd').addEventListener('click', () => {
+  overlay.classList.remove('open');
+});
+overlay.addEventListener('click', (e) => {
+  if(e.target === overlay) overlay.classList.remove('open');
+});
+
+saveAdd.addEventListener('click', async () => {
+  const en = inputEn.value.trim();
+  const de = inputDe.value.trim();
+  if(!en || !de){
+    sheetStatus.textContent = 'Bitte beide Felder ausfüllen.';
+    sheetStatus.className = 'sheet-status error';
+    return;
+  }
+  if(!isConfigured()){
+    sheetStatus.textContent = 'Backend nicht konfiguriert (siehe Hinweis oben).';
+    sheetStatus.className = 'sheet-status error';
+    return;
+  }
+
+  saveAdd.disabled = true;
+  sheetStatus.textContent = 'Wird gespeichert …';
+  sheetStatus.className = 'sheet-status';
+
+  try{
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      // text/plain vermeidet eine CORS-Preflight-Anfrage, die Apps Script nicht beantwortet
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ English: en, German: de })
+    });
+    const data = await res.json();
+    if(data.status !== 'ok') throw new Error(data.message || 'Unbekannter Fehler');
+
+    sentences.push({ ID: data.id, English: en, German: de });
+    order.push(sentences.length - 1);
+
+    sheetStatus.textContent = 'Gespeichert ✓';
+    sheetStatus.className = 'sheet-status ok';
+    setTimeout(() => {
+      overlay.classList.remove('open');
+      pos = order.length - 1;
+      revealed = false;
+      renderCard();
+    }, 600);
+  }catch(err){
+    sheetStatus.textContent = 'Fehler: ' + (err.message || err);
+    sheetStatus.className = 'sheet-status error';
+  }finally{
+    saveAdd.disabled = false;
+  }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadSentences();
+</script>
+</body>
+</html>
